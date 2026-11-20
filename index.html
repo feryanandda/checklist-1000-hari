@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Checklist 1000 Hari</title>
+<meta name="description" content="Checklist harian tantangan 1000 hari kebiasaan. Data tersimpan di Google Sheets.">
+<meta name="theme-color" content="#1b7a43">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="app-title">✓ Checklist <span>1000 Hari</span></div>
+  <div class="header-actions">
+    <button id="syncBadge" class="sync-badge" type="button" aria-label="Status sinkronisasi. Ketuk untuk sinkron sekarang.">
+      <span id="syncDot" class="sync-dot"></span><span id="syncText">Memuat…</span>
+    </button>
+    <button id="themeBtn" class="icon-btn" type="button" aria-label="Ganti tema terang/gelap">🌗</button>
+    <button id="settingsBtn" class="icon-btn" type="button" aria-label="Pengaturan">⚙️</button>
+  </div>
+</header>
+
+<main>
+  <!-- ============ LAYAR HARI INI ============ -->
+  <section id="screen-today" class="screen active" aria-label="Hari ini">
+    <div id="setupCard" class="card warn-card" hidden>
+      <h2>Belum terhubung</h2>
+      <p>Aplikasi belum terhubung ke spreadsheet. Buka Pengaturan (ikon ⚙️ di atas), tempel URL Web App dari hasil deploy Apps Script, lalu simpan.</p>
+      <button id="setupOpenBtn" class="primary-btn" type="button">Buka Pengaturan</button>
+    </div>
+
+    <div id="nightBanner" class="banner night" hidden>
+      <span>Sudah lewat tengah malam. Mau lanjut mengisi hari kemarin (shift malam)?</span>
+      <button id="nightBtn" class="small-btn" type="button">Lanjutkan hari kemarin</button>
+    </div>
+
+    <div id="warningBanner" class="banner danger" hidden></div>
+
+    <div class="day-switcher card">
+      <button id="prevDayBtn" class="nav-arrow" type="button" aria-label="Hari sebelumnya">‹</button>
+      <div class="day-title-wrap">
+        <div id="dayTitle" class="day-title">Hari ke-…</div>
+        <div id="dayDate" class="day-date">—</div>
+      </div>
+      <button id="nextDayBtn" class="nav-arrow" type="button" aria-label="Hari berikutnya">›</button>
+    </div>
+
+    <div class="quick-days" role="group" aria-label="Pilih hari cepat">
+      <button id="quickToday" class="chip" type="button">Hari ini</button>
+      <button id="quickYesterday" class="chip" type="button">Kemarin</button>
+      <label class="chip file-chip">Pilih tanggal
+        <input id="datePick" type="date" aria-label="Pilih tanggal">
+      </label>
+    </div>
+
+    <div id="todayError" class="card error-card" hidden>
+      <p id="todayErrorText"></p>
+      <button id="todayRetry" class="small-btn" type="button">Coba lagi</button>
+    </div>
+
+    <div id="todayLoading" class="card loading-card">Memuat data hari ini…</div>
+
+    <div id="todayContent" hidden>
+      <div class="card progress-card">
+        <div class="progress-top">
+          <span id="progressText">0/0 selesai</span>
+          <span id="scoreText" class="score-text"></span>
+        </div>
+        <div class="progress-bar" role="progressbar" aria-label="Progres hari ini" id="progressBar">
+          <div id="progressFill" class="progress-fill"></div>
+        </div>
+        <div class="progress-bottom">
+          <span id="statusChip" class="status-chip">—</span>
+          <span id="estimateNote" class="estimate-note"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="field-label">Jenis hari</div>
+        <div class="segmented" id="jenisSeg" role="group" aria-label="Jenis hari">
+          <button type="button" data-jenis="Normal">Normal</button>
+          <button type="button" data-jenis="Lembur">Lembur</button>
+          <button type="button" data-jenis="Libur">Libur</button>
+        </div>
+        <div class="field-label">Shift</div>
+        <div class="segmented" id="shiftSeg" role="group" aria-label="Shift">
+          <button type="button" data-shift="Pagi">Pagi</button>
+          <button type="button" data-shift="Siang">Siang</button>
+          <button type="button" data-shift="Malam">Malam</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="group-title">Inti <span id="intiCount" class="group-count"></span></h3>
+        <div id="groupInti" class="habit-list"></div>
+        <h3 class="group-title">Tambahan <span id="tambahanCount" class="group-count"></span></h3>
+        <div id="groupTambahan" class="habit-list"></div>
+        <p id="noHabitMsg" class="muted" hidden>Tidak ada kebiasaan yang berlaku untuk jenis hari ini.</p>
+      </div>
+
+      <div class="card">
+        <label class="field-label" for="screenTimeInput">Screen time (jam)</label>
+        <input id="screenTimeInput" type="number" inputmode="decimal" min="0" max="24" step="0.5" placeholder="cth. 3.5">
+        <p id="screenWarn" class="field-warn" hidden></p>
+        <label class="field-label" for="langInput">Belajar bahasa baru (menit)</label>
+        <div class="lang-row">
+          <input id="langInput" type="number" inputmode="numeric" min="0" max="1440" step="1" placeholder="0">
+          <button class="small-btn" type="button" data-add-lang="15">+15</button>
+          <button class="small-btn" type="button" data-add-lang="30">+30</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LAYAR RIWAYAT ============ -->
+  <section id="screen-history" class="screen" aria-label="Riwayat">
+    <div class="card">
+      <div class="history-head">
+        <h2>Kalender</h2>
+        <input id="monthInput" type="month" aria-label="Pilih bulan">
+      </div>
+      <div class="cal-week"><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span></div>
+      <div id="calendar" class="calendar"></div>
+      <div class="legend">
+        <span><i class="dot lolos"></i>Lolos</span>
+        <span><i class="dot gagal"></i>Gagal</span>
+        <span><i class="dot sebagian"></i>Terisi sebagian</span>
+        <span><i class="dot kosong"></i>Kosong</span>
+      </div>
+      <p id="historyMsg" class="muted"></p>
+    </div>
+    <div class="card">
+      <h2>Rentetan lolos (streak)</h2>
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-value" id="streakNow">–</div><div class="stat-label">Streak saat ini (hari)</div></div>
+        <div class="stat"><div class="stat-value" id="streakBest">–</div><div class="stat-label">Streak terpanjang</div></div>
+      </div>
+      <p class="muted">Aturan jaga streak: jangan gagal dua hari berturut-turut. Satu hari gagal masih bisa diselamatkan besok.</p>
+      <button id="exportCsvBtn" class="primary-btn" type="button">Ekspor riwayat ke CSV</button>
+    </div>
+  </section>
+
+  <!-- ============ LAYAR RINGKASAN ============ -->
+  <section id="screen-summary" class="screen" aria-label="Ringkasan">
+    <div id="summaryCards" class="stat-grid"></div>
+    <p id="summaryMsg" class="muted"></p>
+    <div class="card">
+      <h2>Tren 30 hari terakhir</h2>
+      <div id="chart30"></div>
+      <div class="legend">
+        <span><i class="dot lolos"></i>Bar = skor harian</span>
+        <span><i class="dot screen"></i>Garis = screen time (jam)</span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Per jenis hari</h2>
+      <div class="table-wrap"><table id="summaryTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ============ LAYAR SISA WAKTU ============ -->
+  <section id="screen-time" class="screen" aria-label="Sisa waktu">
+    <div class="card">
+      <h2>Sisa waktu per jenis hari</h2>
+      <p class="muted">Kolom yang disorot = jenis hari yang sedang kamu buka di layar Hari ini.</p>
+      <div class="table-wrap"><table id="timeTable"></table></div>
+      <p id="timeMsg" class="muted"></p>
+    </div>
+  </section>
+</main>
+
+<nav class="bottom-nav" aria-label="Navigasi utama">
+  <button type="button" data-screen="today" class="active"><span class="nav-ico">📋</span>Hari ini</button>
+  <button type="button" data-screen="history"><span class="nav-ico">🗓️</span>Riwayat</button>
+  <button type="button" data-screen="summary"><span class="nav-ico">📊</span>Ringkasan</button>
+  <button type="button" data-screen="time"><span class="nav-ico">⏱️</span>Sisa waktu</button>
+</nav>
+
+<dialog id="settingsDialog">
+  <form method="dialog" id="settingsForm">
+    <h2>Pengaturan</h2>
+    <label class="field-label" for="apiUrlInput">URL Web App (Apps Script)</label>
+    <input id="apiUrlInput" type="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">
+    <label class="field-label" for="apiTokenInput">Token rahasia (jika diatur di server)</label>
+    <input id="apiTokenInput" type="password" placeholder="Kosongkan jika tidak memakai token" autocomplete="off">
+    <p class="muted">URL &amp; token hanya tersimpan di HP ini, tidak dikirim ke mana pun selain Web App milikmu.</p>
+    <button id="testConnBtn" class="small-btn" type="button">Tes koneksi</button>
+    <span id="testConnMsg" class="muted"></span>
+    <hr>
+    <label class="check-row">
+      <input id="reminderEnabled" type="checkbox">
+      <span>Pengingat lokal isi checklist</span>
+    </label>
+    <label class="field-label" for="reminderTime">Jam pengingat</label>
+    <input id="reminderTime" type="time">
+    <p class="muted">Pengingat lokal hanya berbunyi saat aplikasi terbuka atau baru dipakai — HP membatasi notifikasi dari PWA. Atur jam mengikuti shift-mu.</p>
+    <div class="dialog-actions">
+      <button id="settingsCancel" class="small-btn" type="button">Batal</button>
+      <button id="settingsSave" class="primary-btn" type="submit">Simpan</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
